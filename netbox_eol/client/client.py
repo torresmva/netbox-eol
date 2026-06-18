@@ -2,6 +2,7 @@
 
 No Django imports — unit-testable in isolation.
 """
+
 import time
 
 import requests
@@ -74,7 +75,7 @@ class EolClient:
             if status >= 500:
                 if attempt >= self.max_retries:
                     raise EolApiError(f"{status} {code}", code=code, status=status)
-                self.sleep(2 ** attempt)
+                self.sleep(2**attempt)
                 attempt += 1
                 continue
             # other 4xx (400 bad_request / bad_user_agent) — not retryable
@@ -88,7 +89,7 @@ class EolClient:
                 return int(header)
             except ValueError:
                 pass
-        return 2 ** attempt
+        return 2**attempt
 
     @staticmethod
     def _check_envelope(body, endpoint):
@@ -107,8 +108,12 @@ class EolClient:
             if len((q.get("q") or "").strip()) < 2:
                 invalid_rows.append(
                     MatchRow(
-                        ref=q.get("ref"), query=q.get("q"), vendor=q.get("vendor"),
-                        vendor_resolved=None, matched=False, confidence="none",
+                        ref=q.get("ref"),
+                        query=q.get("q"),
+                        vendor=q.get("vendor"),
+                        vendor_resolved=None,
+                        matched=False,
+                        confidence="none",
                         error={"code": "q_too_short", "message": "q must be at least 2 characters"},
                     )
                 )

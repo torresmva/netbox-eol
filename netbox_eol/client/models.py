@@ -3,6 +3,7 @@
 Plain dataclasses — no Django. Dates are kept as ISO strings at this boundary;
 the model layer coerces them. `raw` retains the full upstream payload.
 """
+
 from dataclasses import dataclass, field
 from typing import Optional
 

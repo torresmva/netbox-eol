@@ -84,6 +84,9 @@ jobs:
       - name: Install NetBox + plugin
         run: |
           python -m pip install --upgrade pip
+          # Use the prebuilt psycopg binary instead of compiling psycopg-c from
+          # source (its C build fails on the runner). Equivalent for the test run.
+          sed -i 's/psycopg\[c,/psycopg[binary,/; s/psycopg\[c\]/psycopg[binary]/' netbox/requirements.txt
           pip install -r netbox/requirements.txt
           pip install -e ./plugin
       - name: Configure NetBox

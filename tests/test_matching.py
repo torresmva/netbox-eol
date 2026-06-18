@@ -3,18 +3,27 @@
 Operates on plain values + client dataclasses so it is unit-testable without
 NetBox; the Django model/job layer extracts the values and applies the results.
 """
+
 from netbox_eol.client.models import MatchRow
 from netbox_eol import matching
 
 
 def row(**kw):
-    base = {"ref": "dt-1", "query": "X", "vendor": None, "vendor_resolved": None,
-            "matched": False, "confidence": "none", "match": None}
+    base = {
+        "ref": "dt-1",
+        "query": "X",
+        "vendor": None,
+        "vendor_resolved": None,
+        "matched": False,
+        "confidence": "none",
+        "match": None,
+    }
     base.update(kw)
     return MatchRow.from_dict(base)
 
 
 # --- build_query ---------------------------------------------------------
+
 
 def test_build_query_prefers_part_number_over_model():
     q = matching.build_query(ref=7, model="Catalyst 3850", part_number="WS-C3850-48T")
@@ -62,15 +71,16 @@ def test_classify_invalid_input_row_is_invalid():
 
 # --- learned_vendor ------------------------------------------------------
 
+
 def test_learned_vendor_prefers_vendor_resolved():
-    r = row(vendor_resolved="juniper",
-            match={"vendor_slug": "juniper-other", "product_id": "MX480"})
+    r = row(
+        vendor_resolved="juniper", match={"vendor_slug": "juniper-other", "product_id": "MX480"}
+    )
     assert matching.learned_vendor(r) == "juniper"
 
 
 def test_learned_vendor_falls_back_to_match_vendor_slug():
-    r = row(vendor_resolved=None,
-            match={"vendor_slug": "juniper", "product_id": "MX480"})
+    r = row(vendor_resolved=None, match={"vendor_slug": "juniper", "product_id": "MX480"})
     assert matching.learned_vendor(r) == "juniper"
 
 

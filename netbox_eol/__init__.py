@@ -6,6 +6,7 @@ framework-free API client (``netbox_eol.client``) stays importable and
 unit-testable without a NetBox/Django install. Inside a real NetBox the guard is a
 no-op and ``config`` is exported for plugin discovery.
 """
+
 __version__ = "0.1.0"
 
 try:

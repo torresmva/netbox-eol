@@ -4,6 +4,7 @@ Avoids any external mocking dependency — mounts a custom requests adapter that
 serves canned responses in order and records the PreparedRequests sent, so tests
 can assert on URL, method, headers, and body without touching the network.
 """
+
 import json
 
 import pytest

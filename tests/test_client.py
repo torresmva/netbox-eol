@@ -2,6 +2,7 @@
 
 Hermetic: every test uses the FakeTransport from conftest; no live calls, ever.
 """
+
 import pytest
 
 from netbox_eol.client import EolClient
@@ -45,29 +46,41 @@ def test_match_posts_to_integrations_namespace_with_queries_body(session, transp
 
 
 def test_match_parses_rows_into_typed_dataclasses(session, transport):
-    transport.enqueue(200, {
-        "data": [
-            {
-                "ref": "dt-101", "query": "WS-C3850-48T", "vendor": "cisco",
-                "vendor_resolved": "cisco", "matched": True, "confidence": "exact",
-                "match": {
-                    "vendor_slug": "cisco", "product_id": "WS-C3850-48T",
-                    "product_name": "Catalyst 3850 48 Port Data",
-                    "lifecycle_status": "end_of_life",
-                    "applicable_series": ["Catalyst 3850 Series"],
-                    "last_date_of_support": "2022-10-30",
-                    "replacement_product": "C9300-48T",
-                    "kev": {"exposed": True, "count": 1, "cve_ids": ["CVE-2023-20198"]},
+    transport.enqueue(
+        200,
+        {
+            "data": [
+                {
+                    "ref": "dt-101",
+                    "query": "WS-C3850-48T",
+                    "vendor": "cisco",
+                    "vendor_resolved": "cisco",
+                    "matched": True,
+                    "confidence": "exact",
+                    "match": {
+                        "vendor_slug": "cisco",
+                        "product_id": "WS-C3850-48T",
+                        "product_name": "Catalyst 3850 48 Port Data",
+                        "lifecycle_status": "end_of_life",
+                        "applicable_series": ["Catalyst 3850 Series"],
+                        "last_date_of_support": "2022-10-30",
+                        "replacement_product": "C9300-48T",
+                        "kev": {"exposed": True, "count": 1, "cve_ids": ["CVE-2023-20198"]},
+                    },
                 },
-            },
-            {
-                "ref": "dt-102", "query": "MX480", "vendor": None,
-                "vendor_resolved": None, "matched": False, "confidence": "none",
-                "match": None,
-            },
-        ],
-        "meta": {"requested": 2, "matched": 1},
-    })
+                {
+                    "ref": "dt-102",
+                    "query": "MX480",
+                    "vendor": None,
+                    "vendor_resolved": None,
+                    "matched": False,
+                    "confidence": "none",
+                    "match": None,
+                },
+            ],
+            "meta": {"requested": 2, "matched": 1},
+        },
+    )
     client = make_client(session)
 
     rows = client.match([{"ref": "dt-101", "q": "WS-C3850-48T"}, {"ref": "dt-102", "q": "MX480"}])
@@ -136,10 +149,21 @@ def _ok(rows):
 
 
 def test_match_parses_invalid_input_row_error(session, transport):
-    transport.enqueue(200, _ok([
-        {"ref": "dt-9", "query": "x", "matched": False, "confidence": "none",
-         "match": None, "error": {"code": "q_too_short", "message": "min 2 chars"}},
-    ]))
+    transport.enqueue(
+        200,
+        _ok(
+            [
+                {
+                    "ref": "dt-9",
+                    "query": "x",
+                    "matched": False,
+                    "confidence": "none",
+                    "match": None,
+                    "error": {"code": "q_too_short", "message": "min 2 chars"},
+                },
+            ]
+        ),
+    )
     rows = make_client(session).match([{"ref": "dt-9", "q": "x"}])
     assert rows[0].error["code"] == "q_too_short"
     assert rows[0].matched is False
@@ -171,16 +195,28 @@ def test_match_raises_when_data_length_mismatches_meta(session, transport):
 
 
 def test_kev_lookup_posts_to_namespace_and_parses(session, transport):
-    transport.enqueue(200, {"data": [
-        {"vendor_slug": "cisco", "product_id": "WS-C3850-48T", "found": True,
-         "kev": {"exposed": True, "count": 1, "cve_ids": ["CVE-2023-20198"]}},
-        {"vendor_slug": "juniper", "product_id": "SRX340", "found": False, "kev": None},
-    ], "meta": {"requested": 2, "exposed": 1}})
+    transport.enqueue(
+        200,
+        {
+            "data": [
+                {
+                    "vendor_slug": "cisco",
+                    "product_id": "WS-C3850-48T",
+                    "found": True,
+                    "kev": {"exposed": True, "count": 1, "cve_ids": ["CVE-2023-20198"]},
+                },
+                {"vendor_slug": "juniper", "product_id": "SRX340", "found": False, "kev": None},
+            ],
+            "meta": {"requested": 2, "exposed": 1},
+        },
+    )
 
-    results = make_client(session).kev_lookup([
-        {"vendor_slug": "cisco", "product_id": "WS-C3850-48T"},
-        {"vendor_slug": "juniper", "product_id": "SRX340"},
-    ])
+    results = make_client(session).kev_lookup(
+        [
+            {"vendor_slug": "cisco", "product_id": "WS-C3850-48T"},
+            {"vendor_slug": "juniper", "product_id": "SRX340"},
+        ]
+    )
 
     assert transport.last_request.url == "https://eol.network/api/v1/integrations/kev/lookup"
     assert results[0].found is True
@@ -190,9 +226,18 @@ def test_kev_lookup_posts_to_namespace_and_parses(session, transport):
 
 
 def test_search_gets_search_endpoint_with_query(session, transport):
-    transport.enqueue(200, {"data": [
-        {"vendor_slug": "cisco", "product_id": "WS-C3850-48T", "product_name": "Catalyst 3850"},
-    ]})
+    transport.enqueue(
+        200,
+        {
+            "data": [
+                {
+                    "vendor_slug": "cisco",
+                    "product_id": "WS-C3850-48T",
+                    "product_name": "Catalyst 3850",
+                },
+            ]
+        },
+    )
 
     hits = make_client(session).search("3850")
 
