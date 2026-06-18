@@ -5,6 +5,7 @@ from django.urls import path
 from netbox_eol import views
 
 urlpatterns = [
+    path("", views.DashboardView.as_view(), name="dashboard"),
     path(
         "lifecycle-products/",
         views.LifecycleProductListView.as_view(),

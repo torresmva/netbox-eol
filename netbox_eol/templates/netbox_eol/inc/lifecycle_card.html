@@ -1,0 +1,66 @@
+{% load helpers %}
+<div class="card">
+  <h2 class="card-header">
+    <i class="mdi mdi-calendar-clock"></i> eol.network Lifecycle
+    {% if rollup %}<span class="badge text-bg-grey ms-1">inherited from device type</span>{% endif %}
+  </h2>
+  {% if product %}
+  <table class="table table-hover attr-table">
+    <tr>
+      <th scope="row">Status</th>
+      <td>
+        {% if product.lifecycle_status == "end_of_life" %}
+          <span class="badge text-bg-red">End of life</span>
+        {% elif product.lifecycle_status == "end_of_sale" %}
+          <span class="badge text-bg-orange">End of sale</span>
+        {% elif product.lifecycle_status == "approaching_eol" %}
+          <span class="badge text-bg-yellow">Approaching EoL</span>
+        {% elif product.lifecycle_status == "aging" %}
+          <span class="badge text-bg-yellow">Aging</span>
+        {% elif product.lifecycle_status == "supported" %}
+          <span class="badge text-bg-green">Supported</span>
+        {% else %}
+          <span class="badge text-bg-grey">{{ product.lifecycle_status|default:"—" }}</span>
+        {% endif %}
+      </td>
+    </tr>
+    <tr><th scope="row">Product</th><td>{{ product.product_name|default:product.product_id }}<br><small class="text-muted">{{ product.vendor_slug }} / {{ product.product_id }}</small></td></tr>
+    <tr><th scope="row">End of sale</th><td>{{ product.end_of_sale_date|placeholder }}</td></tr>
+    <tr><th scope="row">Last date of support</th><td>{{ product.last_date_of_support|placeholder }}</td></tr>
+    <tr><th scope="row">SW maintenance ends</th><td>{{ product.end_of_sw_maintenance_date|placeholder }}</td></tr>
+    <tr>
+      <th scope="row">Recommended replacement</th>
+      <td>{{ product.replacement_product|placeholder }}</td>
+    </tr>
+    <tr>
+      <th scope="row">KEV exposure</th>
+      <td>
+        {% if product.kev_exposed %}
+          <span class="badge text-bg-red">Exposed</span> {{ product.kev_count }} CVE{{ product.kev_count|pluralize }}
+          {% if product.kev_cve_ids %}<br><small class="text-muted">{{ product.kev_cve_ids|join:", " }}</small>{% endif %}
+          <br><small class="text-muted">Post-EoL device at active-exploit risk.</small>
+        {% else %}
+          <span class="badge text-bg-green">None</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% if not rollup %}
+    <tr>
+      <th scope="row">Match</th>
+      <td>{{ mapping.get_match_method_display }}{% if mapping.match_confidence %} · {{ mapping.get_match_confidence_display }} tier{% endif %}</td>
+    </tr>
+    {% endif %}
+    {% if product.url %}
+    <tr><th scope="row">Reference</th><td><a href="{{ product.url }}" target="_blank" rel="noopener">eol.network <i class="mdi mdi-open-in-new"></i></a></td></tr>
+    {% endif %}
+  </table>
+  {% else %}
+  <div class="card-body text-muted">
+    {% if mapping and mapping.match_confidence and mapping.match_confidence != "none" %}
+      Matched at <strong>{{ mapping.get_match_confidence_display }}</strong> tier — needs review (no lifecycle record applied).
+    {% else %}
+      No eol.network lifecycle data. Run a sync, or the device type hasn't matched a product.
+    {% endif %}
+  </div>
+  {% endif %}
+</div>

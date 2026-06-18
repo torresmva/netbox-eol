@@ -1,0 +1,60 @@
+{% extends 'base/layout.html' %}
+{% load render_table from django_tables2 %}
+
+{% block title %}EOL Network{% endblock %}
+
+{% block content %}
+<div class="row row-cards mb-3">
+  <div class="col-sm-6 col-lg-2">
+    <div class="card card-sm"><div class="card-body text-center">
+      <div class="h1 m-0">{{ total_mapped }}</div>
+      <div class="text-muted">Matched device types</div>
+    </div></div>
+  </div>
+  <div class="col-sm-6 col-lg-2">
+    <div class="card card-sm"><div class="card-body text-center">
+      <div class="h1 m-0 text-yellow">{{ needs_review }}</div>
+      <div class="text-muted">Needs review</div>
+    </div></div>
+  </div>
+  <div class="col-sm-6 col-lg-2">
+    <div class="card card-sm"><div class="card-body text-center">
+      <div class="h1 m-0 text-red">{{ past_eol_devices }}</div>
+      <div class="text-muted">Past-EoL devices</div>
+    </div></div>
+  </div>
+  <div class="col-sm-6 col-lg-2">
+    <div class="card card-sm"><div class="card-body text-center">
+      <div class="h1 m-0 text-orange">{{ eol_soon_devices }}</div>
+      <div class="text-muted">EoL &le; 90d</div>
+    </div></div>
+  </div>
+  <div class="col-sm-6 col-lg-2">
+    <div class="card card-sm"><div class="card-body text-center">
+      <div class="h1 m-0 text-orange">{{ eos_soon_devices }}</div>
+      <div class="text-muted">EoS &le; 90d</div>
+    </div></div>
+  </div>
+  <div class="col-sm-6 col-lg-2">
+    <div class="card card-sm"><div class="card-body text-center">
+      <div class="h1 m-0 text-red">{{ kev_devices }}</div>
+      <div class="text-muted">KEV-exposed devices</div>
+    </div></div>
+  </div>
+</div>
+
+<div class="row mb-3">
+  <div class="col">
+    <small class="text-muted">
+      Last sync: <strong>{{ settings.get_last_sync_status_display }}</strong>
+      {% if settings.last_sync_finished %}at {{ settings.last_sync_finished }}{% endif %}
+      {% if settings.last_sync_message %}— {{ settings.last_sync_message }}{% endif %}
+    </small>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="card-header">Device-Type Mappings</h2>
+  {% render_table table %}
+</div>
+{% endblock %}

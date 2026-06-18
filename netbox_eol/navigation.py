@@ -7,6 +7,15 @@ menu = PluginMenu(
     icon_class="mdi mdi-calendar-clock",
     groups=(
         (
+            "Overview",
+            (
+                PluginMenuItem(
+                    link="plugins:netbox_eol:dashboard",
+                    link_text="Dashboard",
+                ),
+            ),
+        ),
+        (
             "Lifecycle",
             (
                 PluginMenuItem(
