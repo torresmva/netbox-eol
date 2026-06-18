@@ -92,6 +92,21 @@ class EolSettings(models.Model):
         )
         return obj
 
+    def set_api_key(self, plaintext):
+        from django.conf import settings as django_settings
+
+        from netbox_eol import crypto
+
+        self.api_key_ciphertext = crypto.encrypt(plaintext or "", django_settings.SECRET_KEY)
+        self.api_key_last4 = (plaintext or "")[-4:]
+
+    def get_api_key(self):
+        from django.conf import settings as django_settings
+
+        from netbox_eol import crypto
+
+        return crypto.decrypt(self.api_key_ciphertext, django_settings.SECRET_KEY)
+
 
 class LifecycleProduct(NetBoxModel):
     """Cached eol.network product record (the lifecycle + KEV source of truth)."""

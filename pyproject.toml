@@ -12,6 +12,7 @@ license = { text = "Apache-2.0" }
 authors = [{ name = "Mike Torres" }]
 dependencies = [
     "requests>=2.28",
+    "cryptography>=3.4",
 ]
 
 [project.optional-dependencies]
