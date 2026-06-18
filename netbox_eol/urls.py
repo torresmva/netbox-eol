@@ -6,6 +6,7 @@ from netbox_eol import views
 
 urlpatterns = [
     path("", views.DashboardView.as_view(), name="dashboard"),
+    path("settings/", views.EolSettingsView.as_view(), name="settings"),
     path(
         "lifecycle-products/",
         views.LifecycleProductListView.as_view(),

@@ -1,16 +1,20 @@
-"""Plugin views: a lifecycle dashboard + read-only list views over the tables."""
+"""Plugin views: settings page, lifecycle dashboard, and list views."""
 
 from datetime import timedelta
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.generic import View
 
 from dcim.models import Device
 from netbox.views import generic
 
-from netbox_eol import models, tables
+from netbox_eol import forms, models, sync, tables
+from netbox_eol.client import EolClient
+from netbox_eol.client.exceptions import EolApiError, EolAuthError, EolRateLimited
+from netbox_eol.jobs import EolSyncJob
 
 
 class DashboardView(LoginRequiredMixin, View):
@@ -48,6 +52,69 @@ class DashboardView(LoginRequiredMixin, View):
             "table": table,
         }
         return render(request, "netbox_eol/dashboard.html", context)
+
+
+class EolSettingsView(LoginRequiredMixin, View):
+    template_name = "netbox_eol/settings.html"
+
+    def get(self, request):
+        settings = models.EolSettings.load()
+        return render(
+            request,
+            self.template_name,
+            {"form": forms.EolSettingsForm(instance=settings), "settings": settings},
+        )
+
+    def post(self, request):
+        settings = models.EolSettings.load()
+
+        if "test" in request.POST:
+            return self._test_connection(request, settings)
+
+        if "sync" in request.POST:
+            EolSyncJob.enqueue(manual=True, user=request.user)
+            messages.success(request, "Sync queued.")
+            return redirect("plugins:netbox_eol:settings")
+
+        if "clear_key" in request.POST:
+            settings.api_key_ciphertext = ""
+            settings.api_key_last4 = ""
+            settings.save()
+            messages.success(request, "API key cleared.")
+            return redirect("plugins:netbox_eol:settings")
+
+        form = forms.EolSettingsForm(request.POST, instance=settings)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Settings saved.")
+            return redirect("plugins:netbox_eol:settings")
+        return render(request, self.template_name, {"form": form, "settings": settings})
+
+    def _test_connection(self, request, settings):
+        api_key = settings.get_api_key()
+        if not api_key:
+            messages.error(request, "No API key set.")
+            return redirect("plugins:netbox_eol:settings")
+        client = EolClient(
+            base_url=settings.base_url, api_key=api_key, user_agent=sync.DEFAULT_USER_AGENT
+        )
+        try:
+            client.match([{"ref": "test", "q": "test-connection"}])
+            messages.success(request, "Connection OK — integration key accepted.")
+        except EolAuthError as exc:
+            if exc.code == "integration_key_required":
+                messages.error(
+                    request,
+                    "Key is valid but not an integration key — generate one in the "
+                    "eol.network portal.",
+                )
+            else:
+                messages.error(request, f"Authentication failed: {exc.code}")
+        except EolRateLimited as exc:
+            messages.warning(request, f"Rate limited: {exc.code}")
+        except EolApiError as exc:
+            messages.error(request, f"API error: {exc}")
+        return redirect("plugins:netbox_eol:settings")
 
 
 class LifecycleProductListView(generic.ObjectListView):

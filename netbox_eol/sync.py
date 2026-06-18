@@ -7,10 +7,16 @@ framework-free matching core.
 
 from datetime import date, datetime, timezone
 
+from django.utils import timezone as django_timezone
+
 from dcim.models import DeviceType
 
-from netbox_eol import matching
+from netbox_eol import __version__, matching
+from netbox_eol.client import EolClient
+from netbox_eol.client.exceptions import EolApiError
 from netbox_eol.models import DeviceTypeMapping, LifecycleProduct, ManufacturerVendorMap
+
+DEFAULT_USER_AGENT = f"netbox-eol-plugin/{__version__} (+https://github.com/torresmva/netbox-eol)"
 
 
 def _parse_date(value):
@@ -128,6 +134,41 @@ def run_sync(client, settings, now=None):
         mapping.save()
 
     _refresh_kev(client, now)
+    return counts
+
+
+def run_and_record(settings, user_agent=DEFAULT_USER_AGENT):
+    """Build a client from settings, run the sync, and record last_sync_* status.
+
+    Shared by the management command, the scheduled job, and the "Sync now" action.
+    Returns the counts dict; re-raises after recording a failure.
+    """
+    api_key = settings.get_api_key()
+    if not api_key:
+        settings.last_sync_status = "failed"
+        settings.last_sync_message = "No API key configured."
+        settings.last_sync_finished = django_timezone.now()
+        settings.save()
+        raise EolApiError("No API key configured.")
+
+    client = EolClient(base_url=settings.base_url, api_key=api_key, user_agent=user_agent)
+    settings.last_sync_started = django_timezone.now()
+    settings.save()
+    try:
+        counts = run_sync(client, settings)
+    except Exception as exc:
+        settings.last_sync_status = "failed"
+        settings.last_sync_message = f"{type(exc).__name__}: {exc}"
+        settings.last_sync_finished = django_timezone.now()
+        settings.save()
+        raise
+    settings.last_sync_status = "success"
+    settings.last_sync_message = (
+        f"auto={counts['auto']} review={counts['review']} "
+        f"unmatched={counts['unmatched']} invalid={counts['invalid']}"
+    )
+    settings.last_sync_finished = django_timezone.now()
+    settings.save()
     return counts
 
 

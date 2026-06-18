@@ -13,6 +13,10 @@ menu = PluginMenu(
                     link="plugins:netbox_eol:dashboard",
                     link_text="Dashboard",
                 ),
+                PluginMenuItem(
+                    link="plugins:netbox_eol:settings",
+                    link_text="Settings",
+                ),
             ),
         ),
         (

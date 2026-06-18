@@ -1,0 +1,53 @@
+{% extends 'base/layout.html' %}
+
+{% block title %}EOL Network Settings{% endblock %}
+
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card">
+        <h2 class="card-header">eol.network Settings</h2>
+        <div class="card-body">
+          {% for field in form %}
+          <div class="mb-3">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<small class="form-text text-muted d-block">{{ field.help_text }}</small>{% endif %}
+            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+        <div class="card-footer text-end">
+          <button type="submit" name="save" class="btn btn-primary">Save</button>
+          <button type="submit" name="test" class="btn btn-outline-secondary">Test connection</button>
+          <button type="submit" name="sync" class="btn btn-outline-secondary">Sync now</button>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card">
+        <h2 class="card-header">Status</h2>
+        <table class="table table-hover attr-table">
+          <tr>
+            <th scope="row">API key</th>
+            <td>{% if settings.api_key_last4 %}<code>••••{{ settings.api_key_last4 }}</code>{% else %}<span class="text-muted">not set</span>{% endif %}</td>
+          </tr>
+          <tr><th scope="row">Sync enabled</th><td>{{ settings.sync_enabled|yesno:"Yes,No" }}</td></tr>
+          <tr>
+            <th scope="row">Last sync</th>
+            <td>{{ settings.get_last_sync_status_display }}{% if settings.last_sync_finished %}<br><small class="text-muted">{{ settings.last_sync_finished }}</small>{% endif %}</td>
+          </tr>
+          <tr><th scope="row">Message</th><td><small>{{ settings.last_sync_message|default:"—" }}</small></td></tr>
+        </table>
+        {% if settings.api_key_last4 %}
+        <div class="card-footer">
+          <button type="submit" name="clear_key" class="btn btn-outline-danger btn-sm">Clear key</button>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
