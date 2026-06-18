@@ -6,16 +6,16 @@ the Postgres/Redis service containers and enables the plugin. Not for production
 
 ALLOWED_HOSTS = ["*"]
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "netbox",
-        "USER": "netbox",
-        "PASSWORD": "netbox",
-        "HOST": "localhost",
-        "PORT": "5432",
-        "CONN_MAX_AGE": 300,
-    }
+# NetBox 4.2.0 requires DATABASE (singular). The plural DATABASES form is newer;
+# use the singular to match the supported floor.
+DATABASE = {
+    "ENGINE": "django.db.backends.postgresql",
+    "NAME": "netbox",
+    "USER": "netbox",
+    "PASSWORD": "netbox",
+    "HOST": "localhost",
+    "PORT": "5432",
+    "CONN_MAX_AGE": 300,
 }
 
 REDIS = {
