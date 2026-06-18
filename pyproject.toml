@@ -15,6 +15,11 @@ dependencies = [
     "cryptography>=3.4",
 ]
 
+[project.urls]
+Homepage = "https://github.com/torresmva/netbox-eol"
+Repository = "https://github.com/torresmva/netbox-eol"
+Issues = "https://github.com/torresmva/netbox-eol/issues"
+
 [project.optional-dependencies]
 test = [
     "pytest>=7",
