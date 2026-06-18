@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff black
+      - name: ruff
+        run: ruff check .
+      - name: black
+        run: black --check .
+
+  unit:
+    # Framework-free client tests — no NetBox/Django needed.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e ".[test]"
+      - run: pytest
+
+  netbox:
+    # Framework tests: load the plugin into a real NetBox and run its test suite.
+    # Validates that the plugin (PluginConfig, future models/migrations/views)
+    # actually works on the target NetBox. The matrix pins the min_version floor;
+    # add newer tags as they're validated (we support 4.2 -> latest).
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        netbox-version: ["v4.2.0"]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: netbox
+          POSTGRES_PASSWORD: netbox
+          POSTGRES_DB: netbox
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out plugin
+        uses: actions/checkout@v4
+        with:
+          path: plugin
+      - name: Check out NetBox ${{ matrix.netbox-version }}
+        uses: actions/checkout@v4
+        with:
+          repository: netbox-community/netbox
+          ref: ${{ matrix.netbox-version }}
+          path: netbox
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install NetBox + plugin
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r netbox/requirements.txt
+          pip install -e ./plugin
+      - name: Configure NetBox
+        run: cp plugin/.github/netbox-ci-config.py netbox/netbox/netbox/configuration.py
+      - name: Run plugin tests
+        run: python netbox/netbox/manage.py test netbox_eol --verbosity 2
